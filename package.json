@@ -22,10 +22,10 @@
   "peerDependencies": {
     "prop-types": "^15.5.4",
     "react": "16.7.0-alpha.0",
+    "react-dom": "^16.7.0-alpha.0",
     "xxhashjs": "0.2.2"
   },
   "devDependencies": {
-    "react-dom": "^16.7.0-alpha.0",
     "react-scripts": "2.0.3",
     "gh-pages": "^1.2.0",
     "babel-core": "^6.26.3",
@@ -52,6 +52,9 @@
   "dependencies": {
     "xxhashjs": "^0.2.2"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "react",
     "suspense",
