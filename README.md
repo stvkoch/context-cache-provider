@@ -108,7 +108,7 @@ It's a function that return a promise or an observable.
 ## Run example
 
 
-![Imgur](https://i.imgur.com/t3jPG31.gifv)
+![Imgur](https://raw.githubusercontent.com/stvkoch/context-cache-provider/master/example/public/input2.gif)
 
 
 To run example you should install all deps.
