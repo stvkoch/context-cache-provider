@@ -107,6 +107,10 @@ It's a function that return a promise or an observable.
 
 ## Run example
 
+
+![Imgur](https://i.imgur.com/t3jPG31.gifv)
+
+
 To run example you should install all deps.
 
 ```

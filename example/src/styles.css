@@ -2,17 +2,20 @@
   font-family: sans-serif;
   font-size: 16px;
 }
+body {
+  background-color: #f1f1f1;
+}
 .topbar {
   padding: 10px 0 0 0;
-  border-bottom: 1px dotted #ddd;
+  border-bottom: 1px dotted #9d9d9d;
   display: flex;
 }
 .topbar a {
   margin: 0px 3px;
   padding: 10px;
-  border-top: 1px dotted #ddd;
-  border-right: 1px dotted #ddd;
-  border-left: 1px dotted #ddd;
+  border-top: 1px dotted #9d9d9d;
+  border-right: 1px dotted #9d9d9d;
+  border-left: 1px dotted #9d9d9d;
 }
 
 .topbar button {
@@ -29,6 +32,6 @@ ul {
 }
 
 li {
-  border-bottom: 1px dotted #ddd;
+  border-bottom: 1px dotted #9d9d9d;
   padding: 10px;
 }
