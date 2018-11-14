@@ -1,6 +1,6 @@
 {
   "name": "context-cache-provider",
-  "version": "1.0.0",
+  "version": "1.0.0.1",
   "description": "",
   "author": "stvkoch",
   "license": "MIT",
@@ -28,5 +28,6 @@
   },
   "dependencies": {
     "xxhashjs": "^0.2.2"
-  }
+  },
+  "keywords": ["react", "suspense", "resource", "hooks", "context", "architecture", "state", "manager"]
 }
