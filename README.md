@@ -1,30 +1,106 @@
-# react-provider-cache
+# context-cache-provider
 
+
+
+_Alert! This package is using experimental React features._
+
+ 
 > 
 
-[![NPM](https://img.shields.io/npm/v/react-provider-cache.svg)](https://www.npmjs.com/package/react-provider-cache) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![NPM](https://img.shields.io/npm/v/context-cache-provider.svg)](https://www.npmjs.com/package/context-cache-provider) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ## Install
 
 ```bash
-npm install --save react-provider-cache
+npm install --save context-cache-provider
 ```
 
 ## Usage
 
+
+Setting the react-context-cache provider
+
 ```jsx
-import React, { Component } from 'react'
+import React, { createContext} from 'react'
+import Provider from 'context-cache-provider'
 
-import MyComponent from 'react-provider-cache'
+const context = createContext();
+export context;
 
-class Example extends Component {
-  render () {
-    return (
-      <MyComponent />
-    )
-  }
+function fetchItems(query = {}) {
+  return fetch('http://apiserver.io', {
+            body: JSON.stringify(query)
+         }).then(response => response.json());
+}
+
+export default function ProviderItems({children}) {
+  return <Provider context={context} fetchItems={fetchItems}>
+    {children}
+   </Provider>;
 }
 ```
+
+Using the context to bring resources inside of your components 
+
+
+```jsx
+
+import React, { Suspense, useContext } from 'react'
+
+import {context} from './provider-items'
+
+export default function ListItems() {
+  const { getResource } = useContext(context);
+  
+  function renderList() {
+    const data = getResource('fetchItems')();
+    return <ul>
+      {data.map(item => <li>{item.title}</li>}
+     </ul>;
+  }
+  
+  
+  return <Suspense fallback={<div>Loading...</div>}>
+    {renderList()}
+   </Suspense>;
+}
+```
+
+You can have many Providers you want each one with your own resources.
+
+## Api
+
+### getResource
+
+
+```
+getResource(resourceName:String, invalidateCacheItem:Boolean):Function
+```
+
+
+## Knowledge
+ 
+#### Provider
+
+Provider is a cache component using context that map resources.
+
+When you get resource and call him, the provider will throw the
+promise returned by resource, then react will suspense the render
+if your component was wrapper by Suspense React Component. 
+   
+
+#### Context
+
+It's a component where you can bring resources to your components
+
+
+#### Resources
+
+It's a function that return a promise or an observable.
+
+
+
+
 
 ## License
 

@@ -1,20 +1,29 @@
 {
-  "name": "react-provider-cache-example",
-  "homepage": "https://stvkoch.github.io/react-provider-cache",
-  "version": "0.0.0",
-  "license": "MIT",
-  "private": true,
+  "name": "context-cache-provider-example",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "main": "src/index.js",
   "dependencies": {
-    "prop-types": "^15.6.2",
-    "react": "^16.4.1",
-    "react-dom": "^16.4.1",
-    "react-scripts": "^1.1.4",
-    "react-provider-cache": "file:.."
+    "babel-jest": "^23.6.0",
+    "browser-history": "1.0.1",
+    "path-match": "1.2.4",
+    "react": "^16.7.0-alpha.0",
+    "react-dom": "^16.7.0-alpha.0",
+    "react-scripts": "2.0.3"
   },
+  "devDependencies": {},
   "scripts": {
-    "start": "react-scripts start",
+    "start": "unlink node_modules/context-cache-provider && ln -s ../../ node_modules/context-cache-provider && react-scripts start",
+
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }
