@@ -7,6 +7,9 @@ export default function UserDetail({ id }) {
 
   const data = getResource("fetchUser")({ id });
 
+  if (!data)
+    return null;
+
   function RenderImage({ src }) {
     const srcImage = getResource("loadImage")(
       "https://raw.githubusercontent.com/johnlindquist/swapi-json-server/master/public/" + data.image
@@ -18,10 +21,12 @@ export default function UserDetail({ id }) {
     <div className="user-detail">
       <div className="image">
         <Suspense fallback={<div>loading image...</div>}>
-          <RenderImage src={data.image} />
+          {data.image && <RenderImage src={data.image} />}
         </Suspense>
       </div>
-      <div className="name">{data.name}</div>
+      <div className="name">Name: {data.name}</div>
+      <div className="name">Gender: {data.gender}</div>
+      <div className="name">Birth Year: {data.birth_year}</div>
     </div>
   );
 }

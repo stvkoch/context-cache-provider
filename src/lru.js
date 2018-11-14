@@ -126,6 +126,10 @@ export default class LRUMap {
     }
   }
 
+  has(key) {
+    return this.map.has(key);
+  };
+
   assign(entries) {
     let entry,
       limit = this.limit || Number.MAX_VALUE;
@@ -141,11 +145,18 @@ export default class LRUMap {
         e[OLDER] = entry;
       }
       entry = e;
-      if (limit-- == 0) {
+      if (limit-- === 0) {
         throw new Error("overflow");
       }
     }
     this.newest = entry;
     this.size = this.map.size;
+  };
+
+  clear() {
+    // Not clearing links should be safe, as we don't expose live links to user
+    this.oldest = this.newest = undefined;
+    this.size = 0;
+    this.map.clear();
   };
 }

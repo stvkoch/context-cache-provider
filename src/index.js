@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-
+import LRUMap from "./lru";
 import XXH from "xxhashjs";
 
-import LRUMap from "./lru";
-
-const HASH_SEED = "notsecurity";
-const LRU_LIMIT = 500;
-
-const lru = new LRUMap(LRU_LIMIT);
+const hashSeed = "notsecurity";
+const lru = new LRUMap(100);
 
 function getKey(name, args) {
-  return XXH.h32(JSON.stringify(arguments), HASH_SEED).toString(16);
+  return XXH.h32(JSON.stringify(arguments), hashSeed).toString(16);
 }
 
 export default function Provider({
                                    children,
                                    context,
-                                   initialItems,
-                                   externalResources,
+                                   initialItems = null,
+                                   externalResources = {},
                                    ...props
                                  }) {
   const setTick = useState(void 0)[1];
 
   useEffect(() => initialItems && lru.assign(initialItems));
-
+  function clearCache() {
+    lru.clear();
+  }
   function getResource(name, force = false) {
     return function() {
       const args = arguments;
@@ -40,7 +37,7 @@ export default function Provider({
 
         var promiseResource = {
           status: "pending",
-          promise,
+          // promise,
           args: undefined
         };
 
@@ -49,9 +46,11 @@ export default function Provider({
           lru.set(key, newData);
           setTick(void 0);
         });
+
         lru.set(key, promiseResource);
         setTick(void 0);
-        throw promiseResource.promise;
+        // throw promiseResource.promise;
+        throw promise;
       }
 
       const recoveryResource = lru.get(key);
@@ -62,20 +61,8 @@ export default function Provider({
   }
 
   return (
-    <context.Provider value={{ getResource }}>{children}</context.Provider>
+    <context.Provider value={{ getResource, clearCache }}>
+      {children}
+    </context.Provider>
   );
 }
-
-
-PropTypes.propTypes = {
-  children: PropTypes.node,
-  context: PropTypes.object.isRequired,
-  initialItems: PropTypes.object,
-  externalResources: PropTypes.object
-};
-
-
-PropTypes.defaultProps = {
-  initialItems: null,
-  externalResources: {}
-};

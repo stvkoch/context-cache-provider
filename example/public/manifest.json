@@ -1,8 +1,0 @@
-{
-  "short_name": "context-cache-provider",
-  "name": "context-cache-provider",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
-}

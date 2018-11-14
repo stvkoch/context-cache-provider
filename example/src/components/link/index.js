@@ -1,13 +1,19 @@
 import React, { useContext } from "react";
 import RouterContext from "./../../contexts/router";
 
-function buttonHtml(props) {
-  return <button {...props} />;
+function LinkGenerator({ href, children, ...props }) {
+  return <a {...props} href={href || '!#'} >{children}</a>;
 }
 
-export default function Link({ path, component, ...props }) {
+export default function Link({ component, ...props }) {
   const { go } = useContext(RouterContext);
+  const LinkComponent = component || LinkGenerator;
 
-  const Bnt = component || buttonHtml;
-  return <Bnt {...props} onClick={() => go(path)} />;
+  return <LinkComponent {...props} onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    props.onClick && props.onClick(e);
+    props.href && go(props.href);
+  }} />
 }
+

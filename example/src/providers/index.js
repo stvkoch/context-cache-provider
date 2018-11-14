@@ -6,30 +6,38 @@ import RouterProvider from "./router";
 import usersContext from "./../contexts/users";
 import productsContext from "./../contexts/products";
 
+
+function nameToId(item, index) {
+  return {...item, id: index+1, slug: item.name.toLowerCase().replace(' ', '_')}
+}
 function fetchUsers() {
-  return fetch("/people.json").then(resp => resp.json());
+  return fetch("https://swapi.co/api/people/")
+  .then(resp => resp.json())
+  .then(response => response.results)
+  .then(data => data.map(nameToId));
 }
 
 function fetchUser(query = {}) {
   if (!query.id) return new Promise(resolve => resolve([]));
 
-  return fetch("/people.json")
+  return fetch("https://swapi.co/api/people/" + query.id)
     .then(resp => resp.json())
-    .then(data => data.filter(people => Number(people.id) == Number(query.id)));
+    .then(nameToId);
 }
 
 function fetchProducts() {
-  return fetch("/starships.json").then(resp => resp.json());
+  return fetch("https://swapi.co/api/starships/")
+  .then(resp => resp.json())
+  .then(response => response.results)
+  .then(data => data.map(nameToId));
 }
 
 function fetchProduct(query = {}) {
   if (!query.id) return new Promise(resolve => resolve([]));
 
-  return fetch("/starships.json")
+  return fetch("https://swapi.co/api/starships/" + query.id)
     .then(resp => resp.json())
-    .then(data =>
-      data.filter(starship => Number(starship.id) == Number(query.id))
-    );
+    .then(nameToId);
 }
 
 /**
