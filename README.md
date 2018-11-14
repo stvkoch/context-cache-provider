@@ -12,6 +12,8 @@ _Alert! This package is using experimental React features._
 
 Use React context to cache data and manager fetch resources on React Applications.
 
+In example folder you will see a complete application example using hooks and zero class components. 
+
 
 ## Install
 
@@ -103,6 +105,15 @@ It's a component where you can bring resources to your components
 It's a function that return a promise or an observable.
 
 
+## Run example
+
+To run example you should install all deps.
+
+```
+cd example
+yarn
+yarn start
+```
 
 
 
