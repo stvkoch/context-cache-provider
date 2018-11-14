@@ -9,6 +9,10 @@ _Alert! This package is using experimental React features._
 
 [![NPM](https://img.shields.io/npm/v/context-cache-provider.svg)](https://www.npmjs.com/package/context-cache-provider) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
+
+Use React context to cache data and manager fetch resources on React Applications.
+
+
 ## Install
 
 ```bash
