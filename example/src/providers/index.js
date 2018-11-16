@@ -1,43 +1,46 @@
-import React from "react";
-import Provider from 'context-cache-provider';
+import React from 'react'
+import Provider from 'context-cache-provider'
 
-import RouterProvider from "./router";
+import RouterProvider from './router'
 
-import usersContext from "./../contexts/users";
-import productsContext from "./../contexts/products";
+import usersContext from './../contexts/users'
+import productsContext from './../contexts/products'
 
-
-function nameToId(item, index) {
-  return {...item, id: index+1, slug: item.name.toLowerCase().replace(' ', '_')}
+function nameToId (item, index) {
+  return {
+    ...item,
+    id: index + 1,
+    slug: item.name.toLowerCase().replace(' ', '_')
+  }
 }
-function fetchUsers() {
-  return fetch("https://swapi.co/api/people/")
-  .then(resp => resp.json())
-  .then(response => response.results)
-  .then(data => data.map(nameToId));
-}
-
-function fetchUser(query = {}) {
-  if (!query.id) return new Promise(resolve => resolve([]));
-
-  return fetch("https://swapi.co/api/people/" + query.id)
+function fetchUsers () {
+  return fetch('https://swapi.co/api/people/')
     .then(resp => resp.json())
-    .then(nameToId);
+    .then(response => response.results)
+    .then(data => data.map(nameToId))
 }
 
-function fetchProducts() {
-  return fetch("https://swapi.co/api/starships/")
-  .then(resp => resp.json())
-  .then(response => response.results)
-  .then(data => data.map(nameToId));
-}
+function fetchUser (query = {}) {
+  if (!query.id) return new Promise(resolve => resolve([]))
 
-function fetchProduct(query = {}) {
-  if (!query.id) return new Promise(resolve => resolve([]));
-
-  return fetch("https://swapi.co/api/starships/" + query.id)
+  return fetch('https://swapi.co/api/people/' + query.id)
     .then(resp => resp.json())
-    .then(nameToId);
+    .then(nameToId)
+}
+
+function fetchProducts () {
+  return fetch('https://swapi.co/api/starships/')
+    .then(resp => resp.json())
+    .then(response => response.results)
+    .then(data => data.map(nameToId))
+}
+
+function fetchProduct (query = {}) {
+  if (!query.id) return new Promise(resolve => resolve([]))
+
+  return fetch('https://swapi.co/api/starships/' + query.id)
+    .then(resp => resp.json())
+    .then(nameToId)
 }
 
 /**
@@ -48,16 +51,16 @@ function fetchProduct(query = {}) {
  * @type {{loadImage: (function(*=): Promise<any>)}}
  */
 const externalResources = {
-  loadImage: function(src) {
-    const image = new Image();
+  loadImage: function (src) {
+    const image = new Image()
     return new Promise(resolve => {
-      image.onload = () => setTimeout(() => resolve(src), 3000);
-      image.src = src;
-    });
+      image.onload = () => setTimeout(() => resolve(src), 3000)
+      image.src = src
+    })
   }
-};
+}
 
-export default function Providers({ children }) {
+export default function Providers ({ children }) {
   return (
     <Provider
       context={productsContext}
@@ -65,6 +68,7 @@ export default function Providers({ children }) {
       fetchProduct={fetchProduct}
     >
       <Provider
+        limit='3'
         context={usersContext}
         fetchUsers={fetchUsers}
         fetchUser={fetchUser}
@@ -73,5 +77,5 @@ export default function Providers({ children }) {
         <RouterProvider>{children}</RouterProvider>
       </Provider>
     </Provider>
-  );
+  )
 }

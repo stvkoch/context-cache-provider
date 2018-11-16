@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import XXH from 'xxhashjs';
 
@@ -275,7 +275,6 @@ function Provider(_ref) {
   var children = _ref.children,
       context = _ref.context,
       _ref$initialItems = _ref.initialItems,
-      initialItems = _ref$initialItems === undefined ? null : _ref$initialItems,
       _ref$limit = _ref.limit,
       limit = _ref$limit === undefined ? LRU_LIMIT : _ref$limit,
       _ref$externalResource = _ref.externalResources,
@@ -285,16 +284,13 @@ function Provider(_ref) {
   var setTick = useState(void 0)[1];
 
   var _useState = useState(function () {
-    return new LRUMap(LRU_LIMIT);
+    console.log('setting limit', limit);
+    return new LRUMap(limit);
   }),
       _useState2 = slicedToArray(_useState, 1),
       lru = _useState2[0];
 
-  useEffect(function () {
-    var lru = new LRUMap(limit);
-    initialItems && lru.assign(initialItems);
-    return lru;
-  });
+  console.log(lru);
 
   /**
    * Crear LRU cache, don't affect state, only clear the lru cache
@@ -312,6 +308,7 @@ function Provider(_ref) {
   function getResource(name) {
     var force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
+    console.log('get resource', name);
     return function () {
       var args = arguments;
       var key = getKey(name, args);
