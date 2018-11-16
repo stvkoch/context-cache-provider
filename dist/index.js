@@ -4,6 +4,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var React = require('react');
 var React__default = _interopDefault(React);
+var PropTypes = _interopDefault(require('prop-types'));
 var XXH = _interopDefault(require('xxhashjs'));
 
 var classCallCheck = function (instance, Constructor) {
@@ -42,8 +43,46 @@ var objectWithoutProperties = function (obj, keys) {
   return target;
 };
 
-var NEWER = Symbol("N");
-var OLDER = Symbol("O");
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+
+var NEWER = Symbol('N');
+var OLDER = Symbol('O');
 
 /**
  * https://github.com/stereobooster/lru_map/blob/stereobooster/index.js
@@ -84,7 +123,7 @@ var LRUMap = function () {
   }
 
   createClass(LRUMap, [{
-    key: "_bump",
+    key: '_bump',
     value: function _bump(entry) {
       if (entry === this.newest) {
         // Already the most recenlty used entry, so no need to update the list
@@ -111,7 +150,7 @@ var LRUMap = function () {
       this.newest = entry;
     }
   }, {
-    key: "get",
+    key: 'get',
     value: function get$$1(key) {
       // First, find our cache entry
       var entry = this.map.get(key);
@@ -121,7 +160,7 @@ var LRUMap = function () {
       return entry.value;
     }
   }, {
-    key: "set",
+    key: 'set',
     value: function set$$1(key, value) {
       var entry = this.map.get(key);
 
@@ -155,7 +194,7 @@ var LRUMap = function () {
       return this;
     }
   }, {
-    key: "shift",
+    key: 'shift',
     value: function shift() {
       // todo: handle special case when limit == 1
       var entry = this.oldest;
@@ -178,15 +217,15 @@ var LRUMap = function () {
       }
     }
   }, {
-    key: "has",
+    key: 'has',
     value: function has(key) {
       return this.map.has(key);
     }
   }, {
-    key: "assign",
+    key: 'assign',
     value: function assign(entries) {
-      var entry = void 0,
-          limit = this.limit || Number.MAX_VALUE;
+      var entry = void 0;
+      var limit = this.limit || Number.MAX_VALUE;
       this.map.clear();
       var it = entries[Symbol.iterator]();
       for (var itv = it.next(); !itv.done; itv = it.next()) {
@@ -200,14 +239,14 @@ var LRUMap = function () {
         }
         entry = e;
         if (limit-- === 0) {
-          throw new Error("overflow");
+          throw new Error('overflow');
         }
       }
       this.newest = entry;
       this.size = this.map.size;
     }
   }, {
-    key: "clear",
+    key: 'clear',
     value: function clear() {
       // Not clearing links should be safe, as we don't expose live links to user
       this.oldest = this.newest = undefined;
@@ -218,65 +257,95 @@ var LRUMap = function () {
   return LRUMap;
 }();
 
-var hashSeed = "notsecurity";
-var lru = new LRUMap(100);
+var HASH_SEED = 121212;
+var LRU_LIMIT = 100;
 
 function getKey(name, args) {
-  return XXH.h32(JSON.stringify(arguments), hashSeed).toString(16);
+  return XXH.h32(JSON.stringify(arguments), HASH_SEED).toString(16);
 }
 
+/**
+ * @name Provider
+ *
+ * @description
+ *  Each Provider have your own cache object, what means that you
+ *  could have same resource name for differents cahce providers
+ *
+ * @example
+ * <Provider context={userContext} fetchList={fetchUserList} fetchItem={fetchUserItem}>
+ *  ...
+ * </Provider>
+ */
 function Provider(_ref) {
   var children = _ref.children,
       context = _ref.context,
       _ref$initialItems = _ref.initialItems,
       initialItems = _ref$initialItems === undefined ? null : _ref$initialItems,
+      _ref$limit = _ref.limit,
+      limit = _ref$limit === undefined ? LRU_LIMIT : _ref$limit,
       _ref$externalResource = _ref.externalResources,
       externalResources = _ref$externalResource === undefined ? {} : _ref$externalResource,
-      props = objectWithoutProperties(_ref, ["children", "context", "initialItems", "externalResources"]);
+      props = objectWithoutProperties(_ref, ['children', 'context', 'initialItems', 'limit', 'externalResources']);
 
   var setTick = React.useState(void 0)[1];
 
+  var _useState = React.useState(function () {
+    return new LRUMap(LRU_LIMIT);
+  }),
+      _useState2 = slicedToArray(_useState, 1),
+      lru = _useState2[0];
+
   React.useEffect(function () {
-    return initialItems && lru.assign(initialItems);
+    var lru = new LRUMap(limit);
+    initialItems && lru.assign(initialItems);
+    return lru;
   });
+
+  /**
+   * Crear LRU cache, don't affect state, only clear the lru cache
+   */
   function clearCache() {
     lru.clear();
   }
+
+  /**
+   * Return the resrouce function
+   *
+   * @param {String} name - resource name
+   * @param {*} force - skip check if exist cache when resource run
+   */
   function getResource(name) {
     var force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
     return function () {
       var args = arguments;
       var key = getKey(name, args);
-
       if (force || !lru.has(key)) {
         var resource = props[name] || externalResources[name];
+        if (typeof resource === 'undefined') {
+          throw Error('Context:Cache:Provider ' + name + ' resource is undefined');
+        }
         var promise = new Promise(function (resolve, reject) {
           resource.apply(null, args).then(function () {
             resolve.apply(null, arguments);
           });
         });
-
         var promiseResource = {
-          status: "pending",
-          // promise,
+          status: 'pending',
           args: undefined
         };
-
         promise.then(function () {
-          var newData = { status: "resolved", args: arguments };
+          var newData = { status: 'resolved', args: arguments };
           lru.set(key, newData);
           setTick(void 0);
         });
-
         lru.set(key, promiseResource);
         setTick(void 0);
-        // throw promiseResource.promise;
         throw promise;
       }
 
       var recoveryResource = lru.get(key);
-      if (recoveryResource.status === "resolved") {
+      if (recoveryResource.status === 'resolved') {
         return recoveryResource.args[0];
       }
     };
@@ -288,6 +357,14 @@ function Provider(_ref) {
     children
   );
 }
+
+Provider.propTypes = {
+  children: PropTypes.node.isRequired,
+  context: PropTypes.object.isRequired,
+  initialItems: PropTypes.any,
+  limit: PropTypes.number,
+  externalResources: PropTypes.object
+};
 
 module.exports = Provider;
 //# sourceMappingURL=index.js.map

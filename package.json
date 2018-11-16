@@ -50,7 +50,10 @@
     "rollup-plugin-url": "^1.4.0"
   },
   "dependencies": {
-    "xxhashjs": "^0.2.2"
+    "prop-types": "^15.5.4",
+    "react": "16.7.0-alpha.0",
+    "react-dom": "^16.7.0-alpha.0",
+    "xxhashjs": "0.2.2"
   },
   "files": [
     "dist"
