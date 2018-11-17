@@ -112,7 +112,7 @@ describe('Provider', () => {
   })
 
 
-  it('resource as function should save result on cache , checking with hit', async () => {
+  it('resource as function should save result on cache, checking with hit', async () => {
     const context = createContext()
 
     const resourceMock = jest.fn(a => a)
