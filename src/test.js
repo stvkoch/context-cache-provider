@@ -24,7 +24,7 @@ describe('Provider', () => {
       const providerInterface = Object.keys(consumer)
       expect(providerInterface).toEqual(['getResource', 'clearCache', 'hit'])
 
-      return null
+      return 'asserts mounted'
     }
 
     const providers = (
@@ -33,7 +33,8 @@ describe('Provider', () => {
       </Provider>
     )
 
-    render(providers)
+    const { container } = render(providers)
+    expect(container).toHaveTextContent('asserts mounted')
   })
 
   it('throw exception for not defined resource', () => {
@@ -91,7 +92,7 @@ describe('Provider', () => {
       passFunc('hello')
       expect(resourceMock).toBeCalledWith('hello')
       expect(resourceMock).toHaveReturned()
-      return null
+      return 'asserts mounted'
     }
 
     const providers = (
@@ -100,21 +101,22 @@ describe('Provider', () => {
       </Provider>
     )
 
-    render(providers)
+    const { container } = render(providers)
+    expect(container).toHaveTextContent('asserts mounted')
   })
 
 
-  it('resource as function should save result on cache', () => {
+  it('resource as function should save result on cache , checking with hit', () => {
     const context = createContext()
 
     const resourceMock = jest.fn(a => a)
 
     const AssertComponent = props => {
-      const { getResource } = useContext(context)
+      const { getResource, hit } = useContext(context)
       const passFunc = getResource('anotherPassFunc')
-      expect(passFunc).toBeTruthy()
       const result = passFunc('hello')
-      return <span data-testid='result'>{result}</span>
+      const hitCache = hit('anotherPassFunc', 'hello')
+      return <span data-testid='result'>{hitCache ? 'hit' : 'not hit'} cache and passFunc return {result}</span>
     }
 
     const providers = (
@@ -123,8 +125,8 @@ describe('Provider', () => {
       </Provider>
     )
 
-    const { getByText } = simulateAsyncRender(providers, 2)
-    expect(getByText('hello').textContent).toBe('hello')
+    const { getByTestId } = simulateAsyncRender(providers, 2)
+    expect(getByTestId('result').textContent).toBe('hit cache and passFunc return hello')
     // should be call only one time because of cache
     expect(resourceMock.mock.calls.length).toBe(1)
   })
@@ -132,19 +134,17 @@ describe('Provider', () => {
   it('resource as promise should call Suspense', () => {
     const context = createContext()
 
-    const resourceMockNotResolved = jest.fn(a => new Promise(resolve => null))
+    const resourceMockNotResolved = a => new Promise(resolve => null)
 
     const ComponentNotResolved = props => {
       const { getResource } = useContext(context)
       const passFunc = getResource('resourceMockNotResolved')
-      expect(passFunc).toBeTruthy()
       passFunc('hello')
-      return null
+      return 'not resolved'
     }
-    
+
     const AssertSuspenseNotResolved = () => {
-      expect(true).toBeTruthy()
-      return null
+      return 'suspense fallback mounted'
     }
 
     const providers = (
@@ -157,7 +157,9 @@ describe('Provider', () => {
         </Provider>
       </Suspense>
     )
-    simulateAsyncRender(providers, 2)
+
+    const { container } = simulateAsyncRender(providers, 5)
+    expect(container).toHaveTextContent('suspense fallback mounted')
   })
 })
 

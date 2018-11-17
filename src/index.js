@@ -6,7 +6,7 @@ import LRUMap from './lru'
 const HASH_SEED = 121212
 const LRU_LIMIT = 100
 
-function getKey (name, args) {
+function getKey () {
   return XXH.h32(JSON.stringify(arguments), HASH_SEED).toString(16)
 }
 
@@ -52,12 +52,16 @@ export default function Provider ({
     return function () {
       const args = arguments
       const key = getKey(name, args)
+
       if (force || !lru.has(key)) {
         const resource = props[name] || externalResources[name]
         if (typeof resource === 'undefined') {
           throw Error(`Context:Cache:Provider ${name} resource is undefined`)
         }
+
+
         if (typeof resource.then === 'function') {
+
           const deffered = new Promise(function (resolve, reject) {
             return resource.apply(null, args).then(function () {
               resolve.apply(null, arguments)
@@ -107,7 +111,7 @@ export default function Provider ({
   }
 
   function hit (name, ...args) {
-    const key = getKey(name, args)
+    const key = getKey(name, Object.assign({}, args))
     return lru.has(key)
   }
 
