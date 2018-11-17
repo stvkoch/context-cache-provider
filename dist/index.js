@@ -7,12 +7,6 @@ var React__default = _interopDefault(React);
 var PropTypes = _interopDefault(require('prop-types'));
 var XXH = _interopDefault(require('xxhashjs'));
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-};
-
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -266,7 +260,7 @@ var LRUMap = function () {
 var HASH_SEED = 121212;
 var LRU_LIMIT = 100;
 
-function getKey(name, args) {
+function getKey() {
   return XXH.h32(JSON.stringify(arguments), HASH_SEED).toString(16);
 }
 
@@ -291,8 +285,6 @@ function Provider(_ref) {
       _ref$externalResource = _ref.externalResources,
       externalResources = _ref$externalResource === undefined ? {} : _ref$externalResource,
       props = objectWithoutProperties(_ref, ['children', 'context', 'initialItems', 'limit', 'externalResources']);
-
-  var setTick = React.useState(void 0)[1];
 
   var _useState = React.useState(function () {
     return new LRUMap(limit);
@@ -321,55 +313,45 @@ function Provider(_ref) {
     return function () {
       var args = arguments;
       var key = getKey(name, args);
-      if (force || !lru.has(key)) {
+      var recoveryResource = lru.get(key);
+      if (force || recoveryResource === undefined) {
         var resource = props[name] || externalResources[name];
         if (typeof resource === 'undefined') {
           throw Error('Context:Cache:Provider ' + name + ' resource is undefined');
         }
-        if (typeof resource.then === 'function') {
-          var deffered = new Promise(function (resolve, reject) {
-            return resource.apply(null, args).then(function () {
-              resolve.apply(null, arguments);
-            });
-          }).then(function () {
-            // first argument as resolved promise experct
-            var newPromiseResource = {
-              type: 'promise',
-              status: 'resolved',
-              args: arguments[0]
-            };
-            lru.set(key, newPromiseResource);
-            setTick(void 0);
-          });
+
+        var deffered = new Promise(function (resolve) {
           var promiseResource = {
-            type: 'promise',
             status: 'pending',
             args: undefined
           };
           lru.set(key, promiseResource);
-          setTick(void 0);
-          throw deffered;
-        }
 
-        if (typeof resource === 'function') {
-          var response = resource.apply(null, args);
-          var _promiseResource = {
-            type: 'function',
+          var resultResource = resource.apply(null, args);
+          if (typeof resultResource.then === 'function') {
+            return resultResource.then(function () {
+              resolve.apply(null, arguments);
+            });
+          }
+          resolve(resultResource);
+        });
+
+        deffered.then(function (result) {
+          // first argument as resolved promise experct
+          var newPromiseResource = {
             status: 'resolved',
-            args: response
+            args: result
           };
-          lru.set(key, _promiseResource);
-          setTick(void 0);
-          return undefined;
-        }
+          lru.set(key, newPromiseResource);
+        });
 
-        return resource;
+        throw deffered;
       }
-      var recoveryResource = lru.get(key);
+
       if (recoveryResource.status === 'resolved') {
-        if (_typeof(recoveryResource.args) === 'object') {
-          return Object.values(recoveryResource.args);
-        }
+        // if (typeof recoveryResource.args === 'object') {
+        //   return Object.values(recoveryResource.args)
+        // }
         return recoveryResource.args;
       }
     };
@@ -380,7 +362,7 @@ function Provider(_ref) {
       args[_key - 1] = arguments[_key];
     }
 
-    var key = getKey(name, args);
+    var key = getKey(name, Object.assign({}, args));
     return lru.has(key);
   }
 
