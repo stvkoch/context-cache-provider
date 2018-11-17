@@ -88,6 +88,14 @@ Clean cache from component provider
 clearCache()
 ```
 
+### hit
+
+Check if exist cache item for this resource and resource arguments
+
+```
+hit(resourceName:String, ...args:any)
+```
+
 ## Knowledge
 
 #### Provider
