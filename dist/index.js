@@ -7,6 +7,12 @@ var React__default = _interopDefault(React);
 var PropTypes = _interopDefault(require('prop-types'));
 var XXH = _interopDefault(require('xxhashjs'));
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -289,17 +295,16 @@ function Provider(_ref) {
   var setTick = React.useState(void 0)[1];
 
   var _useState = React.useState(function () {
-    console.log('setting limit', limit);
     return new LRUMap(limit);
   }),
       _useState2 = slicedToArray(_useState, 1),
       lru = _useState2[0];
 
-  console.log(lru);
-
   /**
    * Crear LRU cache, don't affect state, only clear the lru cache
    */
+
+
   function clearCache() {
     lru.clear();
   }
@@ -313,7 +318,6 @@ function Provider(_ref) {
   function getResource(name) {
     var force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
-    console.log('get resource', name);
     return function () {
       var args = arguments;
       var key = getKey(name, args);
@@ -322,41 +326,73 @@ function Provider(_ref) {
         if (typeof resource === 'undefined') {
           throw Error('Context:Cache:Provider ' + name + ' resource is undefined');
         }
-        var promise = new Promise(function (resolve, reject) {
-          resource.apply(null, args).then(function () {
-            resolve.apply(null, arguments);
+        if (typeof resource.then === 'function') {
+          var deffered = new Promise(function (resolve, reject) {
+            return resource.apply(null, args).then(function () {
+              resolve.apply(null, arguments);
+            });
+          }).then(function () {
+            // first argument as resolved promise experct
+            var newPromiseResource = {
+              type: 'promise',
+              status: 'resolved',
+              args: arguments[0]
+            };
+            lru.set(key, newPromiseResource);
+            setTick(void 0);
           });
-        });
-        var promiseResource = {
-          status: 'pending',
-          args: undefined
-        };
-        promise.then(function () {
-          var newData = { status: 'resolved', args: arguments };
-          lru.set(key, newData);
+          var promiseResource = {
+            type: 'promise',
+            status: 'pending',
+            args: undefined
+          };
+          lru.set(key, promiseResource);
           setTick(void 0);
-        });
-        lru.set(key, promiseResource);
-        setTick(void 0);
-        throw promise;
-      }
+          throw deffered;
+        }
 
+        if (typeof resource === 'function') {
+          var response = resource.apply(null, args);
+          var _promiseResource = {
+            type: 'function',
+            status: 'resolved',
+            args: response
+          };
+          lru.set(key, _promiseResource);
+          setTick(void 0);
+          return undefined;
+        }
+
+        return resource;
+      }
       var recoveryResource = lru.get(key);
       if (recoveryResource.status === 'resolved') {
-        return recoveryResource.args[0];
+        if (_typeof(recoveryResource.args) === 'object') {
+          return Object.values(recoveryResource.args);
+        }
+        return recoveryResource.args;
       }
     };
   }
 
+  function hit(name) {
+    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    var key = getKey(name, args);
+    return lru.has(key);
+  }
+
   return React__default.createElement(
     context.Provider,
-    { value: { getResource: getResource, clearCache: clearCache } },
+    { value: { getResource: getResource, clearCache: clearCache, hit: hit } },
     children
   );
 }
 
 Provider.propTypes = {
-  children: PropTypes.node.isRequired,
+  children: PropTypes.any.isRequired,
   context: PropTypes.object.isRequired,
   initialItems: PropTypes.any,
   limit: PropTypes.number,

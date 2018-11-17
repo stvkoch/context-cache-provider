@@ -3,8 +3,18 @@ import { render, cleanup } from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
 import Provider from './'
+import { resolve } from 'dns';
 
-afterEach(cleanup)
+beforeEach(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+afterEach(() => {
+  cleanup()
+  console.error.mockRestore()
+
+})
+
 
 describe('Provider', () => {
   it('public interface', () => {
@@ -16,6 +26,7 @@ describe('Provider', () => {
 
       return null
     }
+
     const providers = (
       <Provider context={context}>
         <AssertComponent />
@@ -27,29 +38,31 @@ describe('Provider', () => {
 
   it('throw exception for not defined resource', () => {
     const context = createContext()
+
     const AssertComponent = props => {
       const { getResource } = useContext(context)
-      getResource('passFunc')()
+      getResource('funcNotExist')()
       return 'test assert'
     }
+    
     class AssertErrorComponent extends React.Component {
       constructor (props) {
         super(props)
-        this.state = { hasError: false }
+        this.state = { hasError: false, error: '' }
       }
 
       static getDerivedStateFromError () {
         return { hasError: true }
       }
       componentDidCatch (error, info) {
-        this.setState({ hasError: true })
+        this.setState({ hasError: true, error: error })
       }
 
       render () {
         return this.state.hasError
-          ? <div data-testid='error'>
-              Error
-            </div>
+          ? (<div data-testid='error'>
+            {this.state.error.toString()}
+          </div>)
           : this.props.children
       }
     }
@@ -62,15 +75,14 @@ describe('Provider', () => {
       </AssertErrorComponent>
     )
 
-    const { getByTestId, container } = simulateAsyncRender(providers, 3)
-    expect(container).toHaveTextContent('There was a problem')
-    // const { getByText } = simulateAsyncRender(providers, 3)
-    // expect(getByText('test assert')).toBeTruthy()
-    expect(getByTestId('error')).toBeDisabled()
+    const { container } = simulateAsyncRender(providers, 3)
+    expect(container).toHaveTextContent('Error: Context:Cache:Provider funcNotExist resource is undefined')
   })
 
   it('resource as function should called', () => {
     const context = createContext()
+    const resourceMock = jest.fn()
+
     const AssertComponent = props => {
       const { getResource } = useContext(context)
       const passFunc = getResource('passFunc')
@@ -82,8 +94,6 @@ describe('Provider', () => {
       return null
     }
 
-    const resourceMock = jest.fn()
-
     const providers = (
       <Provider context={context} passFunc={resourceMock}>
         <AssertComponent />
@@ -92,6 +102,8 @@ describe('Provider', () => {
 
     render(providers)
   })
+
+
   it('resource as function should save result on cache', () => {
     const context = createContext()
 
@@ -99,14 +111,14 @@ describe('Provider', () => {
 
     const AssertComponent = props => {
       const { getResource } = useContext(context)
-      const passFunc = getResource('passFunc2')
+      const passFunc = getResource('anotherPassFunc')
       expect(passFunc).toBeTruthy()
       const result = passFunc('hello')
       return <span data-testid='result'>{result}</span>
     }
 
     const providers = (
-      <Provider context={context} passFunc2={resourceMock}>
+      <Provider context={context} anotherPassFunc={resourceMock}>
         <AssertComponent />
       </Provider>
     )
@@ -117,43 +129,38 @@ describe('Provider', () => {
     expect(resourceMock.mock.calls.length).toBe(1)
   })
 
-  // it('resource as promise should Suspense', () => {
-  //   const context = createContext()
+  it('resource as promise should call Suspense', () => {
+    const context = createContext()
 
-  //   const resourceMockResolved = jest.fn(
-  //     a => new Promise(resolve => resolve(a))
-  //   )
-  //   const resourceMockNotResolved = jest.fn(a => new Promise())
+    const resourceMockNotResolved = jest.fn(a => new Promise(resolve => null))
 
-  //   const AssertComponentNotResolved = props => {
-  //     const { getResource } = useContext(context)
-  //     const passFunc = getResource('promiseResource')
-  //     expect(passFunc).toBeTruthy()
-  //     passFunc('hello')
-  //     return null
-  //   }
-  //   const AssertSuspenseResolved = () => {
-  //     expect(true).toBeTruthy()
-  //     return null
-  //   }
-  //   const AssertSuspenseNotResolved = () => {
-  //     expect(true).toBeTruthy()
-  //     return null
-  //   }
+    const ComponentNotResolved = props => {
+      const { getResource } = useContext(context)
+      const passFunc = getResource('resourceMockNotResolved')
+      expect(passFunc).toBeTruthy()
+      passFunc('hello')
+      return null
+    }
+    
+    const AssertSuspenseNotResolved = () => {
+      expect(true).toBeTruthy()
+      return null
+    }
 
-  //   const providers = (
-  //     <Suspense fallback={AssertSuspenseResolved}>
-  //       <Provider
-  //         context={context}
-  //         resourceMockNotResolved={resourceMockNotResolved}
-  //       >
-  //         <AssertComponentNotResolved />
-  //       </Provider>
-  //     </Suspense>
-  //   )
-  //   simulateAsyncRender(providers, 2)
-  // })
+    const providers = (
+      <Suspense fallback={AssertSuspenseNotResolved}>
+        <Provider
+          context={context}
+          resourceMockNotResolved={resourceMockNotResolved}
+        >
+          <ComponentNotResolved />
+        </Provider>
+      </Suspense>
+    )
+    simulateAsyncRender(providers, 2)
+  })
 })
+
 function simulateAsyncRender (component, frequency = 2) {
   let lastRender = render(component)
   for (let index = 0; index < frequency - 1; index++) {
