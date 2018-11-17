@@ -1,5 +1,5 @@
 import React, { createContext, useContext, Suspense } from 'react'
-import { render, cleanup } from 'react-testing-library'
+import { render, cleanup, waitForElement } from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
 import Provider from './'
@@ -80,33 +80,39 @@ describe('Provider', () => {
     expect(container).toHaveTextContent('Error: Context:Cache:Provider funcNotExist resource is undefined')
   })
 
-  it('resource as function should called', () => {
+  it('resource as function could be a function', async () => {
     const context = createContext()
-    const resourceMock = jest.fn()
+    const resourceMock = jest.fn(a => a)
 
     const AssertComponent = props => {
       const { getResource } = useContext(context)
       const passFunc = getResource('passFunc')
       expect(passFunc).toBeTruthy()
 
-      passFunc('hello')
+      console.log('called function', passFunc('hello'))
       expect(resourceMock).toBeCalledWith('hello')
       expect(resourceMock).toHaveReturned()
-      return 'asserts mounted'
+      return <span data-testid="comp-result">asserts mounted</span>
     }
 
     const providers = (
       <Provider context={context} passFunc={resourceMock}>
-        <AssertComponent />
+        <Suspense fallback={'suspense'}>
+          <AssertComponent />        
+        </Suspense>
       </Provider>
     )
 
-    const { container } = render(providers)
+    const { container, getByTestId } = simulateAsyncRender(providers, 2)
+
+    await waitForElement(() =>
+      getByTestId('comp-result')
+    )
     expect(container).toHaveTextContent('asserts mounted')
   })
 
 
-  it('resource as function should save result on cache , checking with hit', () => {
+  it('resource as function should save result on cache , checking with hit', async () => {
     const context = createContext()
 
     const resourceMock = jest.fn(a => a)
@@ -116,51 +122,90 @@ describe('Provider', () => {
       const passFunc = getResource('anotherPassFunc')
       const result = passFunc('hello')
       const hitCache = hit('anotherPassFunc', 'hello')
-      return <span data-testid='result'>{hitCache ? 'hit' : 'not hit'} cache and passFunc return {result}</span>
+      return <span data-testid='comp-result'>{hitCache ? 'hit' : 'not hit'} cache and passFunc return {result}</span>
     }
 
     const providers = (
       <Provider context={context} anotherPassFunc={resourceMock}>
-        <AssertComponent />
+        <Suspense fallback='suspense'>
+          <AssertComponent />
+        </Suspense>
       </Provider>
     )
 
+
     const { getByTestId } = simulateAsyncRender(providers, 2)
-    expect(getByTestId('result').textContent).toBe('hit cache and passFunc return hello')
+
+    await waitForElement(() =>
+      getByTestId('comp-result')
+    )
+    expect(getByTestId('comp-result').textContent).toBe('hit cache and passFunc return hello')
     // should be call only one time because of cache
     expect(resourceMock.mock.calls.length).toBe(1)
   })
 
-  it('resource as promise should call Suspense', () => {
+
+  it('resource as promise should call Suspense', async () => {
     const context = createContext()
 
-    const resourceMockNotResolved = a => new Promise(resolve => null)
+    const resourceMockNotResolved = a => new Promise(resolve => resolve('hello'))
 
     const ComponentNotResolved = props => {
       const { getResource } = useContext(context)
       const passFunc = getResource('resourceMockNotResolved')
       passFunc('hello')
-      return 'not resolved'
-    }
 
-    const AssertSuspenseNotResolved = () => {
-      return 'suspense fallback mounted'
+      return 'it is supose not show'
     }
 
     const providers = (
-      <Suspense fallback={AssertSuspenseNotResolved}>
-        <Provider
-          context={context}
-          resourceMockNotResolved={resourceMockNotResolved}
-        >
+      <Provider
+        context={context}
+        resourceMockNotResolved={resourceMockNotResolved}
+      >
+        <Suspense fallback={'suspense fallback mounted'}>
           <ComponentNotResolved />
-        </Provider>
-      </Suspense>
+        </Suspense>
+
+      </Provider>
     )
 
-    const { container } = simulateAsyncRender(providers, 5)
+    const { container } = simulateAsyncRender(providers, 3)
     expect(container).toHaveTextContent('suspense fallback mounted')
   })
+
+  it('resource as promise resolve Suspense', async () => {
+    const context = createContext()
+
+    const resourceMockNotResolved = a => new Promise(resolve => resolve(a + 'result'))
+
+    const Component = props => {
+      const { getResource } = useContext(context)
+      const passFunc = getResource('resourceMockNotResolved')
+      const result = passFunc('hello')
+      return <span data-testid="comp-result">resolved with {result}</span>
+    }
+
+    const providers = (
+      <Provider
+        context={context}
+        resourceMockNotResolved={resourceMockNotResolved}
+      >
+        <Suspense fallback={<span  data-testid="suspense-result">suspense fallback mounted</span>}>
+          <Component />
+        </Suspense>
+      </Provider>
+    )
+    const { getByTestId } = simulateAsyncRender(providers, 3)
+
+    expect(getByTestId('suspense-result')).toHaveTextContent('suspense fallback mounted')
+
+    await waitForElement(() =>
+      getByTestId('comp-result')
+    )
+    expect(getByTestId('comp-result')).toHaveTextContent('resolved with helloresult')
+  })
+
 })
 
 function simulateAsyncRender (component, frequency = 2) {
