@@ -79,69 +79,69 @@ describe('Provider', () => {
     )
   })
 
-  // it('resource as function could be a function', async () => {
-  //   const context = createContext()
-  //   const resourceMock = jest.fn(a => a)
+  it('resource as function could be a function', async () => {
+    const context = createContext()
+    const resourceMock = jest.fn(a => a)
 
-  //   const AssertComponent = props => {
-  //     const { getResource } = useContext(context)
-  //     const passFunc = getResource('passFunc')
-  //     expect(passFunc).toBeTruthy()
+    const AssertComponent = props => {
+      const { getResource } = useContext(context)
+      const passFunc = getResource('passFunc')
+      expect(passFunc).toBeTruthy()
 
-  //     passFunc('hello')
-  //     expect(resourceMock).toBeCalledWith('hello')
-  //     expect(resourceMock).toHaveReturned()
-  //     return <span data-testid='comp-result'>asserts mounted</span>
-  //   }
+      passFunc('hello')
+      expect(resourceMock).toBeCalledWith('hello')
+      expect(resourceMock).toHaveReturned()
+      return <span data-testid='comp-result'>asserts mounted</span>
+    }
 
-  //   const providers = (
-  //     <Provider context={context} passFunc={resourceMock}>
-  //       <Suspense fallback={'suspense'}>
-  //         <AssertComponent />
-  //       </Suspense>
-  //     </Provider>
-  //   )
+    const providers = (
+      <Provider context={context} passFunc={resourceMock}>
+        <Suspense fallback={'suspense'}>
+          <AssertComponent />
+        </Suspense>
+      </Provider>
+    )
 
-  //   const { container, getByTestId } = simulateAsyncRender(providers, 2)
+    const { container, getByTestId } = simulateAsyncRender(providers, 2)
 
-  //   await waitForElement(() => getByTestId('comp-result'))
-  //   expect(container).toHaveTextContent('asserts mounted')
-  // })
+    await waitForElement(() => getByTestId('comp-result'))
+    expect(container).toHaveTextContent('asserts mounted')
+  })
 
-  // it('resource as function should save result on cache, checking with hit', async () => {
-  //   const context = createContext()
+  it('resource as function should save result on cache, checking with hit', async () => {
+    const context = createContext()
 
-  //   const resourceMock = jest.fn(a => a)
+    const resourceMock = jest.fn(a => a)
 
-  //   const AssertComponent = props => {
-  //     const { getResource, hit } = useContext(context)
-  //     const passFunc = getResource('anotherPassFunc')
-  //     const result = passFunc('hello')
-  //     const hitCache = hit('anotherPassFunc', 'hello')
-  //     return (
-  //       <span data-testid='comp-result'>
-  //         {hitCache ? 'hit' : 'not hit'} cache and passFunc return {result}
-  //       </span>
-  //     )
-  //   }
+    const AssertComponent = props => {
+      const { getResource, hit } = useContext(context)
+      const passFunc = getResource('anotherPassFunc')
+      const result = passFunc('hello')
+      const hitCache = hit('anotherPassFunc', 'hello')
+      return (
+        <span data-testid='comp-result'>
+          {hitCache ? 'hit' : 'not hit'} cache and passFunc return {result}
+        </span>
+      )
+    }
 
-  //   const providers = (
-  //     <Provider context={context} anotherPassFunc={resourceMock}>
-  //       <Suspense fallback='suspense'>
-  //         <AssertComponent />
-  //       </Suspense>
-  //     </Provider>
-  //   )
+    const providers = (
+      <Provider context={context} anotherPassFunc={resourceMock}>
+        <Suspense fallback='suspense'>
+          <AssertComponent />
+        </Suspense>
+      </Provider>
+    )
 
-  //   const { getByTestId } = simulateAsyncRender(providers, 2)
+    const { getByTestId } = simulateAsyncRender(providers, 2)
 
-  //   await waitForElement(() => getByTestId('comp-result'))
-  //   expect(getByTestId('comp-result').textContent).toBe(
-  //     'hit cache and passFunc return hello'
-  //   )
-  //   // should be call only one time because of cache
-  //   expect(resourceMock.mock.calls.length).toBe(1)
-  // })
+    await waitForElement(() => getByTestId('comp-result'))
+    expect(getByTestId('comp-result').textContent).toBe(
+      'hit cache and passFunc return hello'
+    )
+    // should be call only one time because of cache
+    expect(resourceMock.mock.calls.length).toBe(1)
+  })
 
   it('resource as promise should call Suspense', async () => {
     const context = createContext()

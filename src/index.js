@@ -76,7 +76,7 @@ export default function Provider({
               })
           }
 
-          resolve(resultResource)
+          return resolve(resultResource)
         })
 
         const promiseResource = {
