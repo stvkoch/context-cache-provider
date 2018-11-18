@@ -6,21 +6,22 @@ import RouterProvider from './router'
 import usersContext from './../contexts/users'
 import productsContext from './../contexts/products'
 
-function nameToId (item, index) {
+function nameToId(item, index) {
   return {
     ...item,
     id: index + 1,
     slug: item.name.toLowerCase().replace(' ', '_')
   }
 }
-function fetchUsers () {
+
+function fetchUsers() {
   return fetch('https://swapi.co/api/people/')
     .then(resp => resp.json())
     .then(response => response.results)
     .then(data => data.map(nameToId))
 }
 
-function fetchUser (query = {}) {
+function fetchUser(query = {}) {
   if (!query.id) return new Promise(resolve => resolve([]))
 
   return fetch('https://swapi.co/api/people/' + query.id)
@@ -28,14 +29,14 @@ function fetchUser (query = {}) {
     .then(nameToId)
 }
 
-function fetchProducts () {
+function fetchProducts() {
   return fetch('https://swapi.co/api/starships/')
     .then(resp => resp.json())
     .then(response => response.results)
     .then(data => data.map(nameToId))
 }
 
-function fetchProduct (query = {}) {
+function fetchProduct(query = {}) {
   if (!query.id) return new Promise(resolve => resolve([]))
 
   return fetch('https://swapi.co/api/starships/' + query.id)
@@ -51,7 +52,7 @@ function fetchProduct (query = {}) {
  * @type {{loadImage: (function(*=): Promise<any>)}}
  */
 const externalResources = {
-  loadImage: function (src) {
+  loadImage: function(src) {
     const image = new Image()
     return new Promise(resolve => {
       image.onload = () => setTimeout(() => resolve(src), 3000)
@@ -60,7 +61,7 @@ const externalResources = {
   }
 }
 
-export default function Providers ({ children }) {
+export default function Providers({ children }) {
   return (
     <Provider
       context={productsContext}

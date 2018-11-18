@@ -310,37 +310,80 @@ function Provider(_ref) {
   function getResource(name) {
     var force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
+    // Return HOF that will delivery new promise where will try
+    // resolve or run the previous configurated resource
     return function () {
       var args = arguments;
       var key = getKey(name, args);
-      var recoveryResource = lru.get(key);
-      if (force || recoveryResource === undefined) {
+      var recoveredResourceIdentity = lru.get(key);
+      if (force || recoveredResourceIdentity === undefined) {
         var resource = props[name] || externalResources[name];
-        if (typeof resource === 'undefined') {
-          throw Error('Context:Cache:Provider ' + name + ' resource is undefined');
+
+        if (typeof resource !== 'function') {
+          throw Error('Context:Cache:Provider ' + name + ' resource is not a function ');
         }
 
-        var deffered = new Promise(function (resolve) {
-          var promiseResource = {
-            status: 'pending',
-            args: undefined
-          };
-          lru.set(key, promiseResource);
+        // const resultResource = resource.apply(null, args)
 
+        // if (typeof resultResource.then !== 'function') {
+        // }
+        // resultResource
+        //   .then(function(value) {
+        //     const promiseResource = {
+        //       status: 'resolved',
+        //       args: value
+        //     }
+
+        //     lru.set(key, promiseResource)
+        //     return value
+        //   })
+        //   .catch(e => {
+        //     const promiseResource = {
+        //       status: 'resolved',
+        //       args: e
+        //     }
+
+        //     lru.set(key, promiseResource)
+        //   })
+
+        // const promiseResource = {
+        //   status: 'pending',
+        //   args: undefined
+        // }
+
+        // lru.set(key, promiseResource)
+        // throw resultResource
+
+        var deffered = new Promise(function (resolve, reject) {
           var resultResource = resource.apply(null, args);
+
           if (typeof resultResource.then === 'function') {
             return resultResource.then(function () {
               resolve.apply(null, arguments);
+            }).catch(function (e) {
+              reject(e);
             });
           }
+
           resolve(resultResource);
         });
 
+        var promiseResource = {
+          status: 'pending',
+          args: undefined
+        };
+        lru.set(key, promiseResource);
+
         deffered.then(function (result) {
-          // first argument as resolved promise experct
           var newPromiseResource = {
             status: 'resolved',
             args: result
+          };
+          lru.set(key, newPromiseResource);
+        }).catch(function (e) {
+          var newPromiseResource = {
+            status: 'rejected',
+            args: e.toString()
           };
           lru.set(key, newPromiseResource);
         });
@@ -348,12 +391,7 @@ function Provider(_ref) {
         throw deffered;
       }
 
-      if (recoveryResource.status === 'resolved') {
-        // if (typeof recoveryResource.args === 'object') {
-        //   return Object.values(recoveryResource.args)
-        // }
-        return recoveryResource.args;
-      }
+      return recoveredResourceIdentity.args;
     };
   }
 

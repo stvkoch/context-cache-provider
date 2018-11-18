@@ -6,7 +6,7 @@ import LRUMap from './lru'
 const HASH_SEED = 121212
 const LRU_LIMIT = 100
 
-function getKey () {
+function getKey() {
   return XXH.h32(JSON.stringify(arguments), HASH_SEED).toString(16)
 }
 
@@ -22,7 +22,7 @@ function getKey () {
  *  ...
  * </Provider>
  */
-export default function Provider ({
+export default function Provider({
   children,
   context,
   initialItems = null,
@@ -37,7 +37,7 @@ export default function Provider ({
   /**
    * Crear LRU cache, don't affect state, only clear the lru cache
    */
-  function clearCache () {
+  function clearCache() {
     lru.clear()
   }
 
@@ -47,55 +47,68 @@ export default function Provider ({
    * @param {String} name - resource name
    * @param {*} force - skip check if exist cache when resource run
    */
-  function getResource (name, force = false) {
-    return function () {
+  function getResource(name, force = false) {
+    // Return HOF that will delivery new promise where will try
+    // resolve or run the previous configurated resource
+    return function() {
       const args = arguments
       const key = getKey(name, args)
-      const recoveryResource = lru.get(key)
-      if (force || recoveryResource === undefined) {
+      const recoveredResourceIdentity = lru.get(key)
+      if (force || recoveredResourceIdentity === undefined) {
         const resource = props[name] || externalResources[name]
-        if (typeof resource === 'undefined') {
-          throw Error(`Context:Cache:Provider ${name} resource is undefined`)
+
+        if (typeof resource !== 'function') {
+          throw Error(
+            `Context:Cache:Provider ${name} resource is not a function `
+          )
         }
 
-        const deffered = new Promise(function (resolve) {
-          const promiseResource = {
-            status: 'pending',
-            args: undefined
-          }
-          lru.set(key, promiseResource)
-
+        const deffered = new Promise(function(resolve, reject) {
           const resultResource = resource.apply(null, args)
+
           if (typeof resultResource.then === 'function') {
-            return resultResource.then(function () {
-              resolve.apply(null, arguments)
-            })
+            return resultResource
+              .then(function() {
+                resolve.apply(null, arguments)
+              })
+              .catch(e => {
+                reject(e)
+              })
           }
+
           resolve(resultResource)
         })
 
-        deffered.then(function (result) {
-          // first argument as resolved promise experct
-          const newPromiseResource = {
-            status: 'resolved',
-            args: result
-          }
-          lru.set(key, newPromiseResource)
-        })
+        const promiseResource = {
+          status: 'pending',
+          args: undefined
+        }
+        lru.set(key, promiseResource)
+
+        deffered
+          .then(function(result) {
+            const newPromiseResource = {
+              status: 'resolved',
+              args: result
+            }
+            lru.set(key, newPromiseResource)
+          })
+          .catch(function(e) {
+            const newPromiseResource = {
+              status: 'rejected',
+              args: e.toString()
+            }
+            lru.set(key, newPromiseResource)
+          })
 
         throw deffered
       }
 
-      if (recoveryResource.status === 'resolved') {
-        // if (typeof recoveryResource.args === 'object') {
-        //   return Object.values(recoveryResource.args)
-        // }
-        return recoveryResource.args
-      }
+      return recoveredResourceIdentity.args
     }
   }
 
-  function hit (name, ...args) {
+  function hit(name, ...args) {
     const key = getKey(name, Object.assign({}, args))
     return lru.has(key)
   }
